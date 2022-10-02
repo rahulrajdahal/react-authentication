@@ -1,15 +1,13 @@
 import { useFormik } from "formik";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import MapContainer from "../components/MapContainer";
 import * as Yup from "yup";
 import { routes } from "../utils/routes";
 import { useNavigate } from "react-router-dom";
 import { useToasts } from "react-toast-notifications";
 import Api from "../app/api";
-import { InfoWindow, Map, Marker } from "google-maps-react";
-import PlacesAutocomplete from "react-places-autocomplete";
+import Map, { Marker, NavigationControl } from "react-map-gl";
 
 function Signup() {
   const api = new Api();
@@ -23,7 +21,8 @@ function Signup() {
       .matches(/(?=.*[0-9])/, "Password must contain a number.")
       .required("Required"),
   });
-  const [value, setValue] = useState("");
+  const [latitude, setLatitude] = useState(0);
+  const [longitude, setLongitude] = useState(0);
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -50,6 +49,59 @@ function Signup() {
     },
   });
   const navigate = useNavigate();
+
+  const [suggestions, setSuggestions] = useState([]);
+  const [viewport, setViewport] = useState({
+    latitude: latitude,
+    longitude: longitude,
+    zoom: 10,
+    bearing: 0,
+    pitch: 0,
+    width: "100%",
+    height: "100vh",
+  });
+
+  useEffect(() => {
+    setViewport({
+      latitude: latitude,
+      longitude: longitude,
+      zoom: 12,
+      // transitionInterpolator: new FlyToInter({ speed: 1.0 }),
+      transitionDuration: "auto",
+      width: "100%",
+      height: "100vh",
+    });
+  }, [latitude, longitude]);
+
+  const handleLocationOnChange = async (e) => {
+    const { value } = e.target;
+    console.log("va", value);
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${value}.json?access_token=pk.eyJ1IjoicmFodWxyYWpkYWhhbCIsImEiOiJja2FjZjFleGMxZmxtMnptdDgzNzk3eXU3In0.0WUp5sKIkUHsfJLj662XTA&&autocomplete=true`
+      );
+      const data = await response.json();
+
+      let temp = [];
+      data.features.map((item) => {
+        temp.push(item);
+      });
+      setSuggestions(temp);
+      console.log("data", temp);
+    } catch (error) {
+      console.error("error", error);
+    }
+  };
+
+  const handleSuggestionsOnClick = (location) => {
+    console.log("location", location);
+    const lat = location.center[1];
+    const long = location.center[0];
+
+    setLatitude(lat);
+    setLongitude(long);
+  };
 
   return (
     <div className="w-full h-screen md:flex">
@@ -97,51 +149,21 @@ function Signup() {
           onChange={formik.handleChange}
           type="date"
         />
-        <Input
-          name="location"
-          label="Location"
-          placeholder="Glenwood, IL"
-          onChange={formik.handleChange}
-        />
-        <PlacesAutocomplete value={value} onChange={(value) => setValue(value)}>
-          {({
-            getInputProps,
-            suggestions,
-            getSuggestionItemProps,
-            loading,
-          }) => (
-            <div className="autocomplete-container">
-              <input
-                {...getInputProps({
-                  placeholder: "Search Places ...",
-                  className: "location-search-input",
-                })}
-              />
-              <div className="autocomplete-dropdown-container">
-                {loading && <div>Loading...</div>}
-                {suggestions.map((suggestion) => {
-                  const className = suggestion.active
-                    ? "suggestion-item--active"
-                    : "suggestion-item";
-                  // inline style for demonstration purpose
-                  const style = suggestion.active
-                    ? { backgroundColor: "#fafafa", cursor: "pointer" }
-                    : { backgroundColor: "#ffffff", cursor: "pointer" };
-                  return (
-                    <div
-                      {...getSuggestionItemProps(suggestion, {
-                        className,
-                        style,
-                      })}
-                    >
-                      <span>{suggestion.description}</span>
-                    </div>
-                  );
-                })}
-              </div>
+        <div className="flex flex-col">
+          <Input
+            name="location"
+            label="Location"
+            placeholder="Glenwood, IL"
+            onChange={handleLocationOnChange}
+          />
+
+          {suggestions?.map((item) => (
+            <div key={item.id} onClick={() => handleSuggestionsOnClick(item)}>
+              {item.place_name}
             </div>
-          )}
-        </PlacesAutocomplete>
+          ))}
+        </div>
+
         <Button text="Signup" />
 
         <div className="flex items-center gap-0">
@@ -154,7 +176,26 @@ function Signup() {
           />
         </div>
       </form>
-      <MapContainer lat={41.9214} lng={-88.0078} />
+      <Map
+        initialViewState={{
+          longitude: -100,
+          latitude: 40,
+          zoom: 3.5,
+        }}
+        style={{ width: 735, height: 434 }}
+        mapStyle="mapbox://styles/mapbox/streets-v11"
+        mapboxAccessToken="pk.eyJ1IjoicmFodWxyYWpkYWhhbCIsImEiOiJjbDR4NTEydHkxbHVzM21tbHNnZXhlMWJiIn0.k-JmsWsELRPm0MAWsfhh2A"
+        onViewportChange={(viewport) => setViewport(viewport)}
+      >
+        <Marker longitude={longitude} latitude={latitude} anchor="bottom">
+          <img src="../public/logo192.png" alt="marker" />
+        </Marker>
+        {/* <GeolocateControl
+          positionOptions={{ enableHighAccuracy: true }}
+          ref={geolocateControlRef}
+        /> */}
+        <NavigationControl />
+      </Map>
     </div>
   );
 }

@@ -1,15 +1,9 @@
-import { GoogleApiWrapper, Map, Marker } from "google-maps-react";
-import React from "react";
+import mapboxgl from "mapbox-gl/dist/mapbox-gl.js";
 
-function MapContainer({ google, lat = "41.9214", lng = "-88.0078" }) {
-  return (
-    <Map google={google}>
-      <Marker name={"Current location"} position={{ lat: lat, lng: lng }} />
-    </Map>
-  );
-}
+mapboxgl.accessToken =
+  "pk.eyJ1IjoicmFodWxyYWpkYWhhbCIsImEiOiJja2FjZjFleGMxZmxtMnptdDgzNzk3eXU3In0.0WUp5sKIkUHsfJLj662XTA";
 
-export default GoogleApiWrapper({
-  apiKey: "AIzaSyCLUGsAfJ3KpGlJSiRxQnkoPeSWY9T5clE",
-  libraries: ["places"],
-})(MapContainer);
+const map = new mapboxgl.Map({
+  container: "YOUR_CONTAINER_ELEMENT_ID",
+  style: "mapbox://styles/mapbox/streets-v11",
+});

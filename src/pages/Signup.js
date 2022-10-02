@@ -7,7 +7,15 @@ import { routes } from "../utils/routes";
 import { useNavigate } from "react-router-dom";
 import { useToasts } from "react-toast-notifications";
 import Api from "../app/api";
-import Map, { Marker, NavigationControl } from "react-map-gl";
+import Map, {
+  FullscreenControl,
+  GeolocateControl,
+  Layer,
+  Marker,
+  NavigationControl,
+  ScaleControl,
+  Source,
+} from "react-map-gl";
 
 function Signup() {
   const api = new Api();
@@ -21,8 +29,8 @@ function Signup() {
       .matches(/(?=.*[0-9])/, "Password must contain a number.")
       .required("Required"),
   });
-  const [latitude, setLatitude] = useState(0);
-  const [longitude, setLongitude] = useState(0);
+  const [latitude, setLatitude] = useState(-15.14);
+  const [longitude, setLongitude] = useState(35.36);
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -66,12 +74,11 @@ function Signup() {
       latitude: latitude,
       longitude: longitude,
       zoom: 12,
-      // transitionInterpolator: new FlyToInter({ speed: 1.0 }),
-      transitionDuration: "auto",
       width: "100%",
       height: "100vh",
     });
   }, [latitude, longitude]);
+  const [geoJson, setGeoJson] = useState();
 
   const handleLocationOnChange = async (e) => {
     const { value } = e.target;
@@ -79,10 +86,10 @@ function Signup() {
 
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${value}.json?access_token=pk.eyJ1IjoicmFodWxyYWpkYWhhbCIsImEiOiJja2FjZjFleGMxZmxtMnptdDgzNzk3eXU3In0.0WUp5sKIkUHsfJLj662XTA&&autocomplete=true`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${value}.json?proximity=ip&types=place%2Cpostcode%2Caddress&access_token=pk.eyJ1IjoicmFodWxyYWpkYWhhbCIsImEiOiJjbDR4NTEydHkxbHVzM21tbHNnZXhlMWJiIn0.k-JmsWsELRPm0MAWsfhh2A`
       );
       const data = await response.json();
-
+      setGeoJson(data);
       let temp = [];
       data.features.map((item) => {
         temp.push(item);
@@ -95,13 +102,14 @@ function Signup() {
   };
 
   const handleSuggestionsOnClick = (location) => {
-    console.log("location", location);
     const lat = location.center[1];
     const long = location.center[0];
 
     setLatitude(lat);
     setLongitude(long);
   };
+
+  const mapRef = React.useRef();
 
   return (
     <div className="w-full h-screen md:flex">
@@ -177,24 +185,20 @@ function Signup() {
         </div>
       </form>
       <Map
+        ref={mapRef}
         initialViewState={{
-          longitude: -100,
-          latitude: 40,
+          longitude: longitude,
+          latitude: latitude,
           zoom: 3.5,
         }}
-        style={{ width: 735, height: 434 }}
+        style={{ width: "50%", height: "100vh" }}
         mapStyle="mapbox://styles/mapbox/streets-v11"
         mapboxAccessToken="pk.eyJ1IjoicmFodWxyYWpkYWhhbCIsImEiOiJjbDR4NTEydHkxbHVzM21tbHNnZXhlMWJiIn0.k-JmsWsELRPm0MAWsfhh2A"
-        onViewportChange={(viewport) => setViewport(viewport)}
+        {...viewport}
       >
         <Marker longitude={longitude} latitude={latitude} anchor="bottom">
           <img src="../public/logo192.png" alt="marker" />
         </Marker>
-        {/* <GeolocateControl
-          positionOptions={{ enableHighAccuracy: true }}
-          ref={geolocateControlRef}
-        /> */}
-        <NavigationControl />
       </Map>
     </div>
   );

@@ -95,6 +95,7 @@ function Signup() {
         temp.push(item);
       });
       setSuggestions(temp);
+      formik.values.location = value;
       console.log("data", temp);
     } catch (error) {
       console.error("error", error);
@@ -105,9 +106,12 @@ function Signup() {
     const lat = location.center[1];
     const long = location.center[0];
 
+    formik.values.location = location.place_name;
     setLatitude(lat);
     setLongitude(long);
   };
+
+  console.log("location", formik.values.location);
 
   const mapRef = React.useRef();
 
@@ -163,6 +167,7 @@ function Signup() {
             label="Location"
             placeholder="Glenwood, IL"
             onChange={handleLocationOnChange}
+            value={formik.values.location}
           />
 
           {suggestions?.map((item) => (

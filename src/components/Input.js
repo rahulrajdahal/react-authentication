@@ -9,6 +9,7 @@ function Input({
   placeholder = "Input...",
   value,
   error,
+  defaultValue,
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -21,7 +22,8 @@ function Input({
         id={id}
         placeholder={placeholder}
         onChange={onChange}
-        defaultValue={value}
+        defaultValue={defaultValue}
+        value={value}
         className="h-14 border-2 border-gray rounded-md p-2 focus:border-primary focus:outline-none"
       />
       {error && <p className="text-red-500">{error}</p>}
